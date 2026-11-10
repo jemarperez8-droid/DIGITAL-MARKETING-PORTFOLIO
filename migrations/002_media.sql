@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS site_media (id SERIAL PRIMARY KEY, storage_key TEXT NOT NULL, content_type TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())

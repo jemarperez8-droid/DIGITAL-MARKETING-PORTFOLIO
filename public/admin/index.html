@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Edit My Portfolio</title><meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<style>
+:root{--ink:#0f172a;--muted:#5b6475;--line:#e3e6ef;--brand:#4f46e5;--soft:#eef0ff}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:#f4f5fb;color:var(--ink);line-height:1.55}
+h1,h2,h3{font-family:'Plus Jakarta Sans',Inter,sans-serif;margin:0 0 .5rem;letter-spacing:-.01em}
+.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top .in{max-width:1000px;margin:0 auto;padding:.8rem 1rem;display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.tabs{max-width:1000px;margin:0 auto;padding:0 1rem .7rem;display:flex;gap:.4rem;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:.45rem 1rem;font:inherit;font-weight:600;cursor:pointer}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+main{max-width:1000px;margin:0 auto;padding:1.4rem 1rem 4rem}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.3rem;margin-bottom:1.1rem}
+label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.9rem}
+label small{display:block;font-weight:400;color:var(--muted)}
+input,textarea{width:100%;margin-top:.3rem;padding:.65rem .8rem;border:1px solid #cfd3e2;border-radius:10px;font:inherit;background:#fff}
+input:focus,textarea:focus{outline:3px solid #d9d6ff;border-color:var(--brand)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.btn{border:0;border-radius:999px;padding:.65rem 1.3rem;font:inherit;font-weight:700;cursor:pointer;background:var(--brand);color:#fff}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink)}.btn.danger{background:#fff;color:#c0392b;border:1px solid #e8b4ad}
+.btn[disabled]{opacity:.6}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:.7rem 1.2rem;border-radius:999px;z-index:50;font-weight:600}
+.toast.err{background:#c0392b}
+.img{width:100%;max-width:220px;aspect-ratio:4/3;border-radius:12px;background:#eef0ff;object-fit:cover;display:grid;place-items:center;color:var(--brand);font-size:.85rem;font-weight:600;overflow:hidden;margin:.3rem 0 .5rem}
+.img.tall{aspect-ratio:4/5;max-width:200px}
+.banner{background:#fff7e6;border:1px solid #f5d38a;border-radius:12px;padding:.8rem 1rem;margin-bottom:1rem}
+.msg{border-top:1px solid var(--line);padding:.9rem 0}.msg:first-child{border:0}
+.center{max-width:480px;margin:12vh auto;text-align:center;padding:0 1rem}
+a{color:var(--brand)}
+</style></head>
+<body x-data="admin()" x-init="init()" x-cloak>
+
+<template x-if="state==='loading'"><div class="center"><p>Loading…</p></div></template>
+
+<template x-if="state==='signin'">
+  <div class="center panel">
+    <h1>Sign in to edit your portfolio</h1>
+    <p style="color:var(--muted)">Only the site owner can edit. Sign in with the Hatchable account that owns this project.</p>
+    <a class="btn" style="display:inline-block;text-decoration:none" :href="loginUrl">Sign in</a>
+  </div>
+</template>
+
+<template x-if="state==='ready'">
+<div>
+  <div class="top">
+    <div class="in">
+      <h2 style="margin:0">Edit My Portfolio</h2>
+      <div class="row"><a class="btn ghost" style="text-decoration:none" href="/" target="_blank">View website ↗</a></div>
+    </div>
+    <div class="tabs">
+      <template x-for="t in tabs" :key="t.k"><button class="tab" :class="{on:tab===t.k}" @click="tab=t.k" x-text="t.l + (t.k==='inquiries' ? ' (' + d.inquiries.length + ')' : '')"></button></template>
+    </div>
+  </div>
+
+  <main>
+    <!-- PROFILE & TEXT -->
+    <div x-show="tab==='profile'">
+      <div class="banner" x-show="d.settings.name==='Your Name'"><b>Start here:</b> replace “Your Name”, upload your professional photo, and add your email and Facebook page. Then use the other tabs for skills, certificates, projects and services.</div>
+
+      <div class="panel">
+        <h3>Professional photo</h3>
+        <template x-if="d.settings.photo_id"><img class="img tall" :src="'/api/media/'+d.settings.photo_id" alt="Your photo"></template>
+        <template x-if="!d.settings.photo_id"><div class="img tall">No photo yet</div></template>
+        <label>Upload photo<small>Used on the Home and About pages. A clear, well-lit head-and-shoulders photo works best.</small>
+          <input type="file" accept="image/*" @change="upload($event, id => { d.settings.photo_id = String(id); saveSettings(true) })"></label>
+      </div>
+
+      <template x-for="g in groups" :key="g.title">
+        <div class="panel">
+          <h3 x-text="g.title"></h3>
+          <div :class="g.cols ? 'grid2' : ''">
+            <template x-for="f in g.fields" :key="f.k">
+              <label><span x-text="f.l"></span><small x-show="f.h" x-text="f.h"></small>
+                <textarea x-show="f.t==='area'" rows="4" x-model="d.settings[f.k]"></textarea>
+                <input x-show="f.t!=='area'" type="text" x-model="d.settings[f.k]" :placeholder="f.p || ''">
+              </label>
+            </template>
+          </div>
+        </div>
+      </template>
+      <button class="btn" :disabled="busy" @click="saveSettings()">Save all changes</button>
+    </div>
+
+    <!-- LIST TABS -->
+    <template x-for="type in ['skills','certificates','projects','services']" :key="type">
+      <div x-show="tab===type" x-data="{ cfg: schema[type] }">
+        <div class="panel" style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap">
+          <div><h3 x-text="cfg.title" style="margin:0"></h3><span style="color:var(--muted)" x-text="cfg.help"></span></div>
+          <button class="btn" @click="add(type)">+ Add</button>
+        </div>
+        <template x-for="(it, idx) in d[type]" :key="it.id || ('n'+idx)">
+          <div class="panel">
+            <div class="grid2">
+              <template x-for="f in cfg.fields" :key="f.k">
+                <label :style="f.t==='area' ? 'grid-column:1/-1' : ''"><span x-text="f.l"></span>
+                  <textarea x-show="f.t==='area'" rows="3" x-model="it[f.k]"></textarea>
+                  <input x-show="f.t!=='area'" :type="f.t==='number' ? 'number' : 'text'" x-model="it[f.k]" :placeholder="f.p || ''">
+                </label>
+              </template>
+            </div>
+            <div x-show="cfg.image">
+              <template x-if="it.image_id"><img class="img" :src="'/api/media/'+it.image_id" alt=""></template>
+              <template x-if="!it.image_id"><div class="img">No image yet</div></template>
+              <label><span x-text="cfg.imageLabel"></span><small>Upload a screenshot, design or photo (JPG or PNG).</small>
+                <input type="file" accept="image/*" @change="upload($event, id => { it.image_id = id; saveItem(type, it) })"></label>
+              <button class="btn ghost" x-show="it.image_id" @click="it.image_id=null; saveItem(type, it)">Remove image</button>
+            </div>
+            <div class="row" style="margin-top:.8rem">
+              <button class="btn" :disabled="busy" @click="saveItem(type, it)">Save</button>
+              <button class="btn danger" @click="remove(type, it, idx)">Delete</button>
+            </div>
+          </div>
+        </template>
+        <p x-show="!d[type].length" style="color:var(--muted)">Nothing here yet. Click “+ Add”.</p>
+      </div>
+    </template>
+
+    <!-- MESSAGES -->
+    <div x-show="tab==='inquiries'">
+      <div class="panel">
+        <h3>Messages from your contact form</h3>
+        <p x-show="!d.inquiries.length" style="color:var(--muted)">No messages yet.</p>
+        <template x-for="(m, idx) in d.inquiries" :key="m.id">
+          <div class="msg">
+            <b x-text="m.name"></b> · <a :href="'mailto:'+m.email" x-text="m.email"></a>
+            <span style="color:var(--muted);font-size:.85rem" x-text="' · ' + new Date(m.created_at).toLocaleString()"></span>
+            <p style="white-space:pre-wrap;margin:.4rem 0" x-text="m.message"></p>
+            <button class="btn danger" @click="remove('inquiries', m, idx)">Delete</button>
+          </div>
+        </template>
+      </div>
+    </div>
+  </main>
+</div>
+</template>
+
+<div class="toast" :class="{err: toastErr}" x-show="toast" x-text="toast" x-transition></div>
+
+<script>
+function admin() {
+  return {
+    state: 'loading', loginUrl: '/login', tab: 'profile', busy: false, toast: '', toastErr: false,
+    d: { settings: {}, skills: [], certificates: [], projects: [], services: [], inquiries: [] },
+    tabs: [
+      { k: 'profile', l: 'Profile & Text' }, { k: 'skills', l: 'Skills' }, { k: 'certificates', l: 'Certificates' },
+      { k: 'projects', l: 'Projects' }, { k: 'services', l: 'Services' }, { k: 'inquiries', l: 'Messages' }
+    ],
+    groups: [
+      { title: 'Home page', fields: [
+        { k: 'name', l: 'Your name' }, { k: 'title', l: 'Professional title', h: 'Separate roles with a · symbol' },
+        { k: 'tagline', l: 'Tagline' }, { k: 'intro', l: 'Short introduction', t: 'area' }, { k: 'what_i_do', l: 'What I do', t: 'area' },
+        { k: 'cta_primary', l: 'Main button text' }, { k: 'cta_secondary', l: 'Contact button text' } ] },
+      { title: 'About page', fields: [
+        { k: 'about_text', l: 'About me', t: 'area', h: 'Leave a blank line between paragraphs.' },
+        { k: 'about_interests', l: 'Interests', t: 'area', h: 'One per line.' }, { k: 'about_strengths', l: 'Strengths', t: 'area', h: 'One per line.' },
+        { k: 'about_goals', l: 'Professional goals', t: 'area' } ] },
+      { title: 'Page introductions', fields: [
+        { k: 'skills_intro', l: 'Skills page', t: 'area' }, { k: 'certs_intro', l: 'Certificates section', t: 'area' },
+        { k: 'portfolio_intro', l: 'Portfolio page', t: 'area' }, { k: 'services_intro', l: 'Services page', t: 'area' }, { k: 'contact_intro', l: 'Contact page', t: 'area' } ] },
+      { title: 'Contact details', cols: true, fields: [
+        { k: 'email', l: 'Professional email', h: 'Messages from your contact form are also sent here.', p: 'name@example.com' },
+        { k: 'phone', l: 'Phone (optional)' }, { k: 'location', l: 'Location (optional)', p: 'City, Philippines' },
+        { k: 'facebook', l: 'Facebook Page link', p: 'https://facebook.com/...' }, { k: 'instagram', l: 'Instagram link (optional)', p: 'https://instagram.com/...' },
+        { k: 'linkedin', l: 'LinkedIn link (optional)', p: 'https://linkedin.com/in/...' } ] }
+    ],
+    schema: {
+      skills: { title: 'Skills', help: 'Shown on the Skills page with a progress bar.', fields: [
+        { k: 'name', l: 'Skill name' }, { k: 'level', l: 'Confidence level (0 to 100)', t: 'number' }, { k: 'description', l: 'Short description', t: 'area' } ] },
+      certificates: { title: 'Certificates', help: 'Upload a photo or screenshot of each certificate.', image: true, imageLabel: 'Certificate image', fields: [
+        { k: 'title', l: 'Certificate title' }, { k: 'issuer', l: 'Issued by' }, { k: 'year', l: 'Year' } ] },
+      projects: { title: 'Portfolio projects', help: 'Add your real outputs: calendars, designs, videos, proposals, funnels.', image: true, imageLabel: 'Project image or screenshot', fields: [
+        { k: 'title', l: 'Project title' }, { k: 'category', l: 'Category', p: 'e.g. Graphic Design' },
+        { k: 'link_url', l: 'Link (Canva, Drive, YouTube, Facebook… optional)', p: 'https://' }, { k: 'description', l: 'Short description', t: 'area' } ] },
+      services: { title: 'Services', help: 'Use a price like “Starts at ₱500” or “Custom quote”.', fields: [
+        { k: 'name', l: 'Service name' }, { k: 'price', l: 'Rate or package (optional)' }, { k: 'description', l: 'Description', t: 'area' } ] }
+    },
+
+    async init() {
+      try {
+        const r = await fetch('/api/admin/data', { headers: { Accept: 'application/json' } });
+        if (r.status === 401 || r.status === 403) {
+          let j = {}; try { j = await r.json(); } catch (e) {}
+          this.loginUrl = (j && j.login_url) || '/login?next=/admin/';
+          this.state = 'signin'; return;
+        }
+        if (!r.ok) throw new Error('load');
+        this.d = await r.json(); this.state = 'ready';
+      } catch (e) { this.state = 'signin'; }
+    },
+    say(m, err) { this.toast = m; this.toastErr = !!err; clearTimeout(this._t); this._t = setTimeout(() => this.toast = '', 2600); },
+    async post(url, body) {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'Something went wrong');
+      return j;
+    },
+    async saveSettings(quiet) {
+      this.busy = true;
+      try { await this.post('/api/admin/settings', { settings: this.d.settings }); this.say(quiet ? 'Photo saved' : 'Changes saved'); }
+      catch (e) { this.say(e.message, true); } this.busy = false;
+    },
+    add(type) {
+      const blank = { skills: { name: '', description: '', level: 80 }, certificates: { title: '', issuer: '', year: '', image_id: null },
+        projects: { title: '', category: '', description: '', link_url: '', image_id: null }, services: { name: '', description: '', price: '' } }[type];
+      this.d[type].unshift({ ...blank });
+    },
+    async saveItem(type, it) {
+      this.busy = true;
+      try { const j = await this.post('/api/admin/item', { type, action: 'save', item: it }); it.id = j.id; this.say('Saved'); }
+      catch (e) { this.say(e.message, true); } this.busy = false;
+    },
+    async remove(type, it, idx) {
+      if (!confirm('Delete this? This cannot be undone.')) return;
+      try { if (it.id) await this.post('/api/admin/item', { type, action: 'delete', item: { id: it.id } }); this.d[type].splice(idx, 1); this.say('Deleted'); }
+      catch (e) { this.say(e.message, true); }
+    },
+    // Shrinks big phone photos in the browser first so uploads are fast and reliable.
+    shrink(file) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onerror = () => reject(new Error('Could not read that file'));
+        fr.onload = () => {
+          const im = new Image();
+          im.onerror = () => reject(new Error('That file is not a valid image'));
+          im.onload = () => {
+            const max = 1600, s = Math.min(1, max / Math.max(im.width, im.height));
+            const c = document.createElement('canvas'); c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+            const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+            resolve(c.toDataURL('image/jpeg', 0.86));
+          };
+          im.src = fr.result;
+        };
+        fr.readAsDataURL(file);
+      });
+    },
+    async upload(ev, done) {
+      const f = ev.target.files && ev.target.files[0]; if (!f) return;
+      this.say('Uploading…');
+      try { const data = await this.shrink(f); const j = await this.post('/api/admin/upload', { data }); done(j.id); }
+      catch (e) { this.say(e.message, true); }
+      ev.target.value = '';
+    }
+  };
+}
+</script>
+</body></html>
